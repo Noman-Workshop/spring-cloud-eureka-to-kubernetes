@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-configmap
+  namespace: default
+data:
+  spring.profiles.active: "kubernetes"
+  eureka.client.serviceUrl.defaultZone: "http://discovery-sts-0.discovery-service:8761/eureka,http://discovery-sts-1.discovery-service:8761/eureka,http://discovery-sts-2.discovery-service:8761/eureka"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-deployment
+  labels:
+    app: demo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-app
+  template:
+    metadata:
+      labels:
+        app: demo-app
+    spec:
+      containers:
+        - name: demo-container
+          envFrom:
+            - configMapRef:
+                name: demo-configmap
+          image: eureka-rnd/demo-service:latest
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "250m"
+            limits:
+              memory: "1.5Gi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8081
+          livenessProbe:
+            httpGet:
+              path: /api/actuator/health/liveness
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /api/actuator/health/readiness
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-service
+spec:
+  selector:
+    app: demo-app
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8081

@@ -1,0 +1,29 @@
+spring:
+  cloud:
+    kubernetes:
+      loadbalancer:
+        mode: service
+      discovery:
+        all-namespaces: true
+
+eureka:
+  client:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  info:
+    env:
+      enabled: true
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
